@@ -111,7 +111,7 @@ function createCategoryAPI(category) {
 }
 
 // Create APIs for all categories
-["indices", "watchlist", "positions", "investment"].forEach(createCategoryAPI);
+["indices", "watchlist", "positions", "investments"].forEach(createCategoryAPI);
 
 // Real-time data subscription
 app.get("/subscribe", (req, res) => {
