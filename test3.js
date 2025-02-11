@@ -154,7 +154,7 @@ app.use(express.json());
 const server = http.createServer(app);
 app.use(cors({ origin: '*' }));
 
-const fyersdata = new FyersSocket("YOUR_FYERS_ACCESS_TOKEN", "");
+const fyersdata = new FyersSocket("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE3MzkyNTM2NzEsImV4cCI6MTczOTMyMDIxMSwibmJmIjoxNzM5MjUzNjcxLCJhdWQiOlsieDowIiwiZDoxIiwiZDoyIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbnF1ZW5GekdGWUhmZkxrQWJOUENWeUVWeC14OUgwNTNEQmNnSHBQLUtwOXlhMzBsNTRXa1kwbW5VdEp5WHlBYWxOVXVNNTdRMVh2ZENFWHgtV0MxWklnb1ZUR2dGeGo3ajNfWTVuTmw4UVVhdmlzND0iLCJkaXNwbGF5X25hbWUiOiJTQVJUSEFLIFNFTkdBUiIsIm9tcyI6IksxIiwiaHNtX2tleSI6ImUxYjcyZjI4Zjg4MDAxOTMxNGE2YWE4MjdmNDhjMGY0M2ZkY2NkNGFlZjdkZDU4NzRhZTkwMjdkIiwiaXNEZHBpRW5hYmxlZCI6bnVsbCwiaXNNdGZFbmFibGVkIjpudWxsLCJmeV9pZCI6IlhTMDc4MDMiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.PstZ2xdsC9t7Q6ttayUq9ouVig3d-ZAtlHnjc7K2dsE", "");
 fyersdata.autoreconnect(6);
 fyersdata.connect();
 
