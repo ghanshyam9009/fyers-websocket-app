@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node test3.js"
+    "start": "nodemon test3.js"
   },
   "keywords": [],
   "author": "",
@@ -12,6 +12,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.21.2",
-    "fyers-api-v3": "^1.3.4"
+    "fyers-api-v3": "^1.3.4",
+    "nodemon": "^3.1.9"
   }
 }

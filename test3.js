@@ -1,5 +1,3 @@
-
-
 const express = require("express");
 const http = require("http");
 const FyersSocket = require("fyers-api-v3").fyersDataSocket;
@@ -10,18 +8,12 @@ const cors = require("cors");
 app.use(express.json()); 
 
 const server = http.createServer(app);
-// Example with CORS configured for ngrok URL
-// app.use(cors({
-//   origin: ['http://localhost:3000', 'https://b869-2405-201-300b-78b9-3d64-2dff-acd9-b869.ngrok-free.app'],
-// }));
-
-
 app.use(cors({ origin: '*' }));
 
 
 
 // Initialize Fyers WebSocket
-const fyersdata = new FyersSocket("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE3Mzg5MDY3MzksImV4cCI6MTczODk3NDY1OSwibmJmIjoxNzM4OTA2NzM5LCJhdWQiOlsieDowIiwiZDoxIiwiZDoyIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbnBaeHozam9TT2RPV3BfNnF3X29UWU1pZEQ2ZU9iM050bUpyRjhMZ0daSEFhWUZFRmpXakVUNUtrTHpDYVozS29heDdjNE91M3ZnVzQ4dFpNd2NUM3FuVmVMQ3MwLTZlczJrbzZyLUtWZVd5TmhDVT0iLCJkaXNwbGF5X25hbWUiOiJTQVJUSEFLIFNFTkdBUiIsIm9tcyI6IksxIiwiaHNtX2tleSI6ImUxYjcyZjI4Zjg4MDAxOTMxNGE2YWE4MjdmNDhjMGY0M2ZkY2NkNGFlZjdkZDU4NzRhZTkwMjdkIiwiaXNEZHBpRW5hYmxlZCI6bnVsbCwiaXNNdGZFbmFibGVkIjpudWxsLCJmeV9pZCI6IlhTMDc4MDMiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.4ETF6pH_k6jtddIdeKz4WKJ7Ekqytqzfu36KwiIdyvE", "");
+const fyersdata = new FyersSocket("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE3MzkyNTM2NzEsImV4cCI6MTczOTMyMDIxMSwibmJmIjoxNzM5MjUzNjcxLCJhdWQiOlsieDowIiwiZDoxIiwiZDoyIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbnF1ZW5GekdGWUhmZkxrQWJOUENWeUVWeC14OUgwNTNEQmNnSHBQLUtwOXlhMzBsNTRXa1kwbW5VdEp5WHlBYWxOVXVNNTdRMVh2ZENFWHgtV0MxWklnb1ZUR2dGeGo3ajNfWTVuTmw4UVVhdmlzND0iLCJkaXNwbGF5X25hbWUiOiJTQVJUSEFLIFNFTkdBUiIsIm9tcyI6IksxIiwiaHNtX2tleSI6ImUxYjcyZjI4Zjg4MDAxOTMxNGE2YWE4MjdmNDhjMGY0M2ZkY2NkNGFlZjdkZDU4NzRhZTkwMjdkIiwiaXNEZHBpRW5hYmxlZCI6bnVsbCwiaXNNdGZFbmFibGVkIjpudWxsLCJmeV9pZCI6IlhTMDc4MDMiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.PstZ2xdsC9t7Q6ttayUq9ouVig3d-ZAtlHnjc7K2dsE", "");
 fyersdata.autoreconnect(6);
 fyersdata.connect();
 
@@ -60,7 +52,8 @@ fyersdata.on("connect", () => {
 fyersdata.on("message", (message) => {
   try {
     if (!message?.symbol || message.ltp === undefined) return;
-
+    // console.log(message);
+    
     if (indicesSubscription.includes(message.symbol)) {
       Object.values(userSessions).forEach((session) => {
         session.clients.forEach((client) => {
@@ -73,7 +66,7 @@ fyersdata.on("message", (message) => {
     Object.entries(userSessions).forEach(([userId, session]) => {
       Object.entries(session.categories || {}).forEach(([category, symbols]) => {
         if (symbols.includes(message.symbol)) {
-          const filteredData = { category, symbol: message.symbol, ltp: message.ltp };
+          const filteredData = { category, symbol: message.symbol, ltp: message.ltp,ch:message.ch,chp:message.chp };
           session.clients.forEach((client) => {
             client.res.write(`data: ${JSON.stringify(filteredData)}\n\n`);
           });
@@ -98,10 +91,10 @@ function createCategoryAPI(category) {
     userSessions[userId].categories[category] = symbols;
 
     if (category === "indices") {
-      console.log("fiest inner api called");
+      console.log("first inner api called");
       indicesSubscription = [...new Set([...indicesSubscription, ...symbols])];
       fyersdata.subscribe(indicesSubscription);
-      console.log("fiest innerinner api called");
+      console.log("first innerinner api called");
     } else {
       updateSubscription(symbols);
     }
@@ -111,7 +104,7 @@ function createCategoryAPI(category) {
 }
 
 // Create APIs for all categories
-["indices", "watchlist", "positions", "investment"].forEach(createCategoryAPI);
+["indices", "watchlist", "positions", "investments","buy-sell"].forEach(createCategoryAPI);
 
 // Real-time data subscription
 app.get("/subscribe", (req, res) => {
