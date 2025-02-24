@@ -265,7 +265,7 @@ fyersdata.on("message", (message) => {
 });
 
 // Create API routes dynamically
-["indices", "watchlist", "positions", "investments", "buy-sell","options"].forEach(category => {
+["indices", "watchlist", "positions", "investments", "buy-sell","options","option-chain"].forEach(category => {
     app.post(`/data/${category}`, (req, res) => {
         const { userId, symbols } = req.body;
         if (!userId || !Array.isArray(symbols)) return res.status(400).json({ error: "Invalid request" });
