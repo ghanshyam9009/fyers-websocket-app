@@ -155,7 +155,6 @@
 // server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 
 
-
 const express = require("express");
 const http = require("http");
 const FyersSocket = require("fyers-api-v3").fyersDataSocket;
@@ -168,7 +167,7 @@ app.use(express.json());
 app.use(cors({ origin: '*' }));
 
 // Initialize Fyers WebSocket
-const fyersdata = new FyersSocket("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE3NDA0NjAyMDYsImV4cCI6MTc0MDUyOTgwNiwibmJmIjoxNzQwNDYwMjA2LCJhdWQiOlsieDowIiwiZDoxIiwiZDoyIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbnZWQ3Vvdl9uREVyT2dfV24tX3RZalA4VEVlRDRJOVJpVE4xcjl1NmZtaTZWY3pVV0RFbEhodUZyclF4clEwVEM0M1NfVUhnb0FtanBINmpJekNCLUFCNzBIWkttSVRmUU1FeHBwbnVHbDNsdFhRbz0iLCJkaXNwbGF5X25hbWUiOiJTQVJUSEFLIFNFTkdBUiIsIm9tcyI6IksxIiwiaHNtX2tleSI6ImUxYjcyZjI4Zjg4MDAxOTMxNGE2YWE4MjdmNDhjMGY0M2ZkY2NkNGFlZjdkZDU4NzRhZTkwMjdkIiwiaXNEZHBpRW5hYmxlZCI6bnVsbCwiaXNNdGZFbmFibGVkIjpudWxsLCJmeV9pZCI6IlhTMDc4MDMiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.MkUXSFdT4vyFxYGwzBOBPFf4NDZJ38FvDsCBWoYqnOs", "");
+const fyersdata = new FyersSocket("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE3NDAzNzU1MzIsImV4cCI6MTc0MDQ0MzQ1MiwibmJmIjoxNzQwMzc1NTMyLCJhdWQiOlsieDowIiwiZDoxIiwiZDoyIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbnZBWHM3aW1YTlpKSmhHR3dadElEOTZmUTVmVG5hcmM3anhlMXRxTFFHX0dKc0MxNFQyclFlclhIX3oyNmhQajNUdmNPcE5ybkdFYThQMjkxSVZpUlBaSE14ZkVVaEk1R3VDQVJIMVdpR090bC1Ebz0iLCJkaXNwbGF5X25hbWUiOiJTQVJUSEFLIFNFTkdBUiIsIm9tcyI6IksxIiwiaHNtX2tleSI6ImUxYjcyZjI4Zjg4MDAxOTMxNGE2YWE4MjdmNDhjMGY0M2ZkY2NkNGFlZjdkZDU4NzRhZTkwMjdkIiwiaXNEZHBpRW5hYmxlZCI6bnVsbCwiaXNNdGZFbmFibGVkIjpudWxsLCJmeV9pZCI6IlhTMDc4MDMiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.UgDtFxXcHA-eTUl3r1e80bTdwUGI1Rtoy2stX1gKLAY", "");
 fyersdata.autoreconnect(6);
 fyersdata.connect();
 
@@ -197,7 +196,7 @@ function updateUnsubscription() {
             fyersdata.unsubscribe([symbol]);
             subscribedSymbols.delete(symbol);
             delete symbolSubscribers[symbol];
-            console.log(❌ Unsubscribed from ${symbol});
+            console.log(`❌ Unsubscribed from ${symbol}`);
         }
     }
     logSubscriptions();
@@ -207,7 +206,7 @@ function updateUnsubscription() {
 function logSubscriptions() {
     console.log("=== Active Subscriptions ===");
     Object.entries(symbolSubscribers).forEach(([symbol, users]) => {
-        console.log(📊 Symbol: ${symbol}, Users: ${Array.from(users).join(", ")});
+        console.log(`📊 Symbol: ${symbol}, Users: ${Array.from(users).join(", ")}`);
     });
 }
 
@@ -222,13 +221,13 @@ fyersdata.on("connect", () => {
 fyersdata.on("message", (message) => {
     if (!message?.symbol || message.ltp === undefined) return;
     const filteredData = { symbol: message.symbol, ltp: message.ltp, ch: message.ch, chp: message.chp };
-    console.log(🔔 Received ${message.symbol} data:, filteredData);
+    console.log(`🔔 Received ${message.symbol} data:`, filteredData);
     
     Object.entries(userSessions).forEach(([userId, session]) => {
         Object.entries(session.categories || {}).forEach(([category, symbols]) => {
             if (symbols.includes(message.symbol)) {
                 session.clients.forEach(client => {
-                    client.res.write(data: ${JSON.stringify({ category, ...filteredData })}\n\n);
+                    client.res.write(`data: ${JSON.stringify({ category, ...filteredData })}\n\n`);
                 });
             }
         });
@@ -236,8 +235,8 @@ fyersdata.on("message", (message) => {
 });
 
 // Create API routes dynamically
-["indices", "watchlist", "positions", "investments", "buy-sell","options","option-chain"].forEach(category => {
-    app.post(/data/${category}, (req, res) => {
+["indices", "watchlist", "positions", "investments", "buy-sell", "options", "option-chain"].forEach(category => {
+    app.post(`/data/${category}`, (req, res) => {
         const { userId, symbols } = req.body;
         if (!userId || !Array.isArray(symbols)) return res.status(400).json({ error: "Invalid request" });
         
@@ -251,8 +250,8 @@ fyersdata.on("message", (message) => {
             updateSubscription(symbols, userId);
         }
         
-        console.log(👤 User ${userId} subscribed to ${category}:, symbols);
-        res.json({ message: ${category} data updated successfully });
+        console.log(`👤 User ${userId} subscribed to ${category}:`, symbols);
+        res.json({ message: `${category} data updated successfully` });
     });
 });
 
@@ -265,14 +264,14 @@ app.get("/subscribe", (req, res) => {
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.flushHeaders();
-    res.write(data: ${JSON.stringify({ message: "Subscribed to live updates" })}\n\n);
+    res.write(`data: ${JSON.stringify({ message: "Subscribed to live updates" })}\n\n`);
     
     userSessions[userId].clients.push({ res });
     req.on("close", () => {
         userSessions[userId].clients = userSessions[userId].clients.filter(client => client.res !== res);
         updateUnsubscription();
     });
-    console.log(✅ User ${userId} subscribed for real-time updates.);
+    console.log(`✅ User ${userId} subscribed for real-time updates.`);
 });
 
 // Unsubscribe user from a category
@@ -287,11 +286,10 @@ app.post("/unsubscribe-category", (req, res) => {
         if (symbolSubscribers[symbol].size === 0) delete symbolSubscribers[symbol];
     }
     updateUnsubscription();
-    console.log(🚫 User ${userId} unsubscribed from ${category});
-    res.json({ message: User unsubscribed from ${category} });
+    console.log(`🚫 User ${userId} unsubscribed from ${category}`);
+    res.json({ message: `User unsubscribed from ${category}` });
 });
 
 // Start server
 const PORT = process.env.PORT || 7000;
-server.listen(PORT, () => console.log(✅ Server running on port ${PORT}));
-
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
