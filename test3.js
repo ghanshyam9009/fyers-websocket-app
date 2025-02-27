@@ -21,16 +21,24 @@ let indicesSubscription = new Set();
 
 // Subscribe to new symbols only if not already subscribed
 function updateSubscription(symbols, userId) {
+    console.log("klllllllllllllllll")
     symbols.forEach(symbol => {
         if (!subscribedSymbols.has(symbol)) {
             fyersdata.subscribe([symbol]);
             subscribedSymbols.add(symbol);
+            symbolSubscribers[symbol] = new Set();  // Ensure initialization
+        }
+        
+        // Initialize symbolSubscribers[symbol] if it is still undefined
+        if (!symbolSubscribers[symbol]) {
             symbolSubscribers[symbol] = new Set();
         }
-        symbolSubscribers[symbol].add(userId);
+
+        symbolSubscribers[symbol].add(userId); // Now it should not throw an error
     });
     logSubscriptions();
 }
+
 
 // Unsubscribe from symbols only if no users need them for any category
 function updateUnsubscription() {
