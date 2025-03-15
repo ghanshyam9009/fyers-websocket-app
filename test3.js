@@ -10,7 +10,7 @@ const server = http.createServer(app);
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
-const fyersdata = new FyersSocket("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE3NDE4MzkzMTAsImV4cCI6MTc0MTkxMjIxMCwibmJmIjoxNzQxODM5MzEwLCJhdWQiOlsieDowIiwiZDoxIiwiZDoyIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbjBsdk9jak1LOW93NGRYNVNWUUtlRGhvR0tfQTFIV3NJUG1kZUhxckh4dHBIeC15UTdNeDlCR2VhSW0ydjlseUJLMU9RazFEcFVtU1NvOVFtZG15V0g2Y0ZQOEdJSnFDTkZwaFdaOWpjb1RGLUVCQT0iLCJkaXNwbGF5X25hbWUiOiJTQVJUSEFLIFNFTkdBUiIsIm9tcyI6IksxIiwiaHNtX2tleSI6ImUxYjcyZjI4Zjg4MDAxOTMxNGE2YWE4MjdmNDhjMGY0M2ZkY2NkNGFlZjdkZDU4NzRhZTkwMjdkIiwiaXNEZHBpRW5hYmxlZCI6bnVsbCwiaXNNdGZFbmFibGVkIjpudWxsLCJmeV9pZCI6IlhTMDc4MDMiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.bl03HRYoRiD4wBzZVqRv2h-__UPPG9wsPBnwKwBg9MI", "");
+const fyersdata = new FyersSocket("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE3NDIwNDAyODgsImV4cCI6MTc0MjA4NTA0OCwibmJmIjoxNzQyMDQwMjg4LCJhdWQiOlsieDowIiwiZDoxIiwiZDoyIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbjFXemdudW9ULW9nYWxuZjViOTJ2WGpIZzJmWlA0YW41Yjl2MnBYT2FYWXNkNk1xYnU1QTZOdy14WElwdV8tclNETW81SmdEaS14Wk5Genc0OGZLdEtxRmVVV2hnS2VNaFNDYzBrVkZFMXB3Y09wVT0iLCJkaXNwbGF5X25hbWUiOiJTQVJUSEFLIFNFTkdBUiIsIm9tcyI6IksxIiwiaHNtX2tleSI6ImUxYjcyZjI4Zjg4MDAxOTMxNGE2YWE4MjdmNDhjMGY0M2ZkY2NkNGFlZjdkZDU4NzRhZTkwMjdkIiwiaXNEZHBpRW5hYmxlZCI6bnVsbCwiaXNNdGZFbmFibGVkIjpudWxsLCJmeV9pZCI6IlhTMDc4MDMiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.SYfZ-mY9HwI1abPIcA37-TbDwY1uK-NH5QYxrt0tUtc", "");
 fyersdata.autoreconnect(6);
 fyersdata.connect();
 
@@ -323,6 +323,5 @@ server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 
 // const PORT = process.env.PORT || 7000;
 // server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-
 
 
