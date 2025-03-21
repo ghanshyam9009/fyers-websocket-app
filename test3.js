@@ -73,6 +73,9 @@ fyersdata.on("message", (message) => {
     if (!message?.symbol || message.ltp === undefined) return;
     const filteredData = { symbol: message.symbol, ltp: message.ltp, ch: message.ch, chp: message.chp };
     lastKnownData[message.symbol] = filteredData;
+
+        console.log(`📊 Received Data:`, { ...filteredData, ltp: message.ltp });
+
     
     Object.entries(userSessions).forEach(([userId, session]) => {
         Object.entries(session.categories || {}).forEach(([category, symbols]) => {
