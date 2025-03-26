@@ -20,7 +20,7 @@ let subscribedSymbols = new Set();
 let symbolSubscribers = {};
 let indicesSubscription = new Set();
 let lastKnownData = {}; // Store last known data
-let pendingSubscriptions = new Map(); // Track pending re-subscriptions
+// let pendingSubscriptions = new Map(); // Track pending re-subscriptions
 
 function updateSubscription(symbols, userId) {
     symbols.forEach(symbol => {
@@ -32,11 +32,12 @@ function updateSubscription(symbols, userId) {
         if (!subscribedSymbols.has(symbol)) {
             fyersdata.subscribe([symbol]);
             subscribedSymbols.add(symbol);
-        } else if (pendingSubscriptions.has(symbol)) {
-            // If symbol was previously unsubscribed but still needed, re-subscribe it
-            fyersdata.subscribe([symbol]);
-            pendingSubscriptions.delete(symbol);
         }
+        // else if (pendingSubscriptions.has(symbol)) {
+        //     // If symbol was previously unsubscribed but still needed, re-subscribe it
+        //     fyersdata.subscribe([symbol]);
+        //     pendingSubscriptions.delete(symbol);
+        // }
     });
     logSubscriptions();
 }
@@ -69,7 +70,7 @@ async function updateUnsubscription() {
             console.log(`❌ Unsubscribing from: ${symbol}`);
             await fyersdata.unsubscribe([symbol]); // Ensure unsubscription completes
             subscribedSymbols.delete(symbol);
-            pendingSubscriptions.set(symbol, true); // Mark for re-subscription if needed
+            // pendingSubscriptions.set(symbol, true); // Mark for re-subscription if needed
             delete symbolSubscribers[symbol];
         } else {
             console.log(`✅ Keeping subscription for: ${symbol}`);
