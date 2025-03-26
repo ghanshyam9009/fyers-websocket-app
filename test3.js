@@ -19,6 +19,23 @@ let subscribedSymbols = new Set();
 let symbolSubscribers = {}; 
 let lastKnownData = {}; 
 
+function updateSubscription(symbols, userId) {
+    console.log(`🔄 Updating subscription for user ${userId}:`, symbols);
+    symbols.forEach(symbol => {
+        if (!symbolSubscribers[symbol]) {
+            symbolSubscribers[symbol] = new Set();
+        }
+        symbolSubscribers[symbol].add(userId);
+
+        if (!subscribedSymbols.has(symbol)) {
+            console.log(`📡 Subscribing to symbol: ${symbol}`);
+            fyersdata.subscribe([symbol]);
+            subscribedSymbols.add(symbol);
+        }
+    });
+    logSubscriptions();
+}
+
 async function updateUnsubscription(symbolsToUnsubscribe) {
     symbolsToUnsubscribe.forEach(async (symbol) => {
         if (subscribedSymbols.has(symbol)) {
@@ -32,24 +49,6 @@ async function updateUnsubscription(symbolsToUnsubscribe) {
     logSubscriptions();
 }
 
-
-async function updateUnsubscription() {
-    console.log("🔄 Checking for unused subscriptions...");
-    for (const symbol of [...subscribedSymbols]) {
-        const stillNeeded = Object.values(userSessions).some(session =>
-            Object.values(session.categories || {}).some(symbols => symbols.includes(symbol))
-        );
-        
-        if (!stillNeeded) {
-            console.log(`❌ Unsubscribing from symbol: ${symbol}`);
-            await fyersdata.unsubscribe([symbol]); 
-            subscribedSymbols.delete(symbol);
-            delete symbolSubscribers[symbol];
-            delete lastKnownData[symbol];
-        }
-    }
-    logSubscriptions();
-}
 
 function logSubscriptions() {
     console.log("=== Active Subscriptions ===");
@@ -148,6 +147,8 @@ app.post("/unsubscribe-category", async (req, res) => {
 
 const PORT = process.env.PORT || 7000;
 server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+
+
 
 
 
