@@ -127,10 +127,19 @@ app.get("/subscribe", (req, res) => {
         });
     });
     
-    req.on("close", () => {
-        userSessions[userId].clients = userSessions[userId].clients.filter(client => client.res !== res);
-        updateUnsubscription();
-    });
+req.on("close", () => {
+    if (!userSessions[userId]) return; // Prevents undefined access
+
+    // Remove the client from the list
+    userSessions[userId].clients = userSessions[userId].clients.filter(client => client.res !== res);
+
+    // If the user has no active subscriptions, clean up the session
+    if (userSessions[userId].clients.length === 0 && Object.keys(userSessions[userId].categories).length === 0) {
+        delete userSessions[userId];
+    }
+
+    updateUnsubscription();
+});
     console.log(`✅ User ${userId} subscribed for real-time updates.`);
 });
 
