@@ -67,11 +67,17 @@ async function updateUnsubscription() {
         );
 
         if (!stillNeeded) {
+            // console.log(`❌ Unsubscribing from: ${symbol}`);
+            // await fyersdata.unsubscribe([symbol]); // Ensure unsubscription completes
+            // subscribedSymbols.delete(symbol);
+            // // pendingSubscriptions.set(symbol, true); // Mark for re-subscription if needed
+            // delete symbolSubscribers[symbol];
+
             console.log(`❌ Unsubscribing from: ${symbol}`);
-            await fyersdata.unsubscribe([symbol]); // Ensure unsubscription completes
+            await fyersdata.unsubscribe([symbol]); 
             subscribedSymbols.delete(symbol);
-            // pendingSubscriptions.set(symbol, true); // Mark for re-subscription if needed
             delete symbolSubscribers[symbol];
+            delete lastKnownData[symbol];  // Clear stored data
         } else {
             console.log(`✅ Keeping subscription for: ${symbol}`);
         }
