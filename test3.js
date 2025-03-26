@@ -164,7 +164,7 @@ app.post("/unsubscribe-category", (req, res) => {
     }
     
     updateUnsubscription();
-    res.json({ message: `User unsubscribed from ${category}` });
+    res.json({ message: `User unsubscribed  hjhjhjh from ${category}` });
 });
 
 const PORT = process.env.PORT || 7000;
