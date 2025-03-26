@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(cors({ origin: '*' }));
 
 const fyersdata = new FyersSocket("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE3NDI5NjM5MzQsImV4cCI6MTc0MzAzNTQ1NCwibmJmIjoxNzQyOTYzOTM0LCJhdWQiOlsieDowIiwiZDoxIiwiZDoyIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbjQ0VGV3WFRoTC1vRk4xMWVtdE5lU2FVSDI2UnlPV2JDNWZUNXQ3cU9DbjhlbUotR3kxWHJlUVA4TUhxNU1wQnZLQTVFNFA4ZEQwaFI5aTVoeVdZTHdoYUxEaUZzMnV4MFNlRkpFcVRtX3NoLVFCST0iLCJkaXNwbGF5X25hbWUiOiJTQVJUSEFLIFNFTkdBUiIsIm9tcyI6IksxIiwiaHNtX2tleSI6ImUxYjcyZjI4Zjg4MDAxOTMxNGE2YWE4MjdmNDhjMGY0M2ZkY2NkNGFlZjdkZDU4NzRhZTkwMjdkIiwiaXNEZHBpRW5hYmxlZCI6bnVsbCwiaXNNdGZFbmFibGVkIjpudWxsLCJmeV9pZCI6IlhTMDc4MDMiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.mX71aWCj15R0WaWbObn3uIdPwDiUdrqYbkROFu7v6e8", "");
-fyersdata.autoreconnect(6);
+fyersdata.autoreconnect(6); 
 fyersdata.connect();
 
 let userSessions = new Map(); // Store user sessions
@@ -142,6 +142,36 @@ app.post("/unsubscribe", async (req, res) => {
 });
 
 // Real-time data stream API
+// app.get("/subscribe", (req, res) => {
+//     const { userId } = req.query;
+//     if (!userId) return res.status(400).json({ error: "Invalid userId" });
+
+//     res.setHeader("Content-Type", "text/event-stream");
+//     res.setHeader("Cache-Control", "no-cache");
+//     res.setHeader("Connection", "keep-alive");
+//     res.flushHeaders();
+//     res.write(`data: ${JSON.stringify({ message: "Subscribed to live updates" })}\n\n`);
+
+//     if (!userSessions.has(userId)) {
+//         userSessions.set(userId, { clients: new Set(), symbols: new Set() });
+//     }
+    
+//     userSessions.get(userId).clients.add({ res });
+
+//     userSessions.get(userId).symbols.forEach(symbol => {
+//         if (lastKnownData.has(symbol)) {
+//             res.write(`data: ${JSON.stringify(lastKnownData.get(symbol))}\n\n`);
+//         }
+//     });
+
+//     req.on("close", () => {
+//         userSessions.get(userId).clients.delete({ res });
+//         console.log(`🔴 User ${userId} disconnected.`);
+//     });
+
+//     console.log(`✅ User ${userId} subscribed for real-time updates.`);
+// });
+
 app.get("/subscribe", (req, res) => {
     const { userId } = req.query;
     if (!userId) return res.status(400).json({ error: "Invalid userId" });
@@ -155,22 +185,33 @@ app.get("/subscribe", (req, res) => {
     if (!userSessions.has(userId)) {
         userSessions.set(userId, { clients: new Set(), symbols: new Set() });
     }
-    
-    userSessions.get(userId).clients.add({ res });
 
+    // Store the response object correctly
+    const client = { res };
+    userSessions.get(userId).clients.add(client);
+
+    // Send last known data for each symbol
     userSessions.get(userId).symbols.forEach(symbol => {
         if (lastKnownData.has(symbol)) {
             res.write(`data: ${JSON.stringify(lastKnownData.get(symbol))}\n\n`);
         }
     });
 
+    // Handle client disconnect
     req.on("close", () => {
-        userSessions.get(userId).clients.delete({ res });
+        const userSession = userSessions.get(userId);
+        if (userSession) {
+            userSession.clients.delete(client);
+            if (userSession.clients.size === 0) {
+                userSessions.delete(userId);
+            }
+        }
         console.log(`🔴 User ${userId} disconnected.`);
     });
 
     console.log(`✅ User ${userId} subscribed for real-time updates.`);
 });
+
 
 // Server start
 const PORT = process.env.PORT || 7000;
