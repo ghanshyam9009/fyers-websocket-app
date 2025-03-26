@@ -100,21 +100,28 @@ fyersdata.on("connect", () => {
 fyersdata.on("message", (message) => {
     if (!message?.symbol || message.ltp === undefined) return;
 
-    const filteredData = { symbol: message.symbol, ltp: message.ltp, ch: message.ch, chp: message.chp };
-    lastKnownData.set(message.symbol, filteredData);
+    const filteredData = { 
+        symbol: message.symbol, 
+        ltp: message.ltp, 
+        ch: message.ch, 
+        chp: message.chp 
+    };
 
-    console.log(`📊 Received Data:`, { ...filteredData });
+    lastKnownData.set(message.symbol, filteredData);
+    console.log(`📊 Received Data:`, filteredData);
 
     if (activeSubscriptions.has(message.symbol)) {
         activeSubscriptions.get(message.symbol).forEach(userId => {
             if (userSessions.has(userId)) {
                 userSessions.get(userId).clients.forEach(client => {
                     client.res.write(`data: ${JSON.stringify(filteredData)}\n\n`);
+                    client.res.flushHeaders();  // Ensures immediate delivery
                 });
             }
         });
     }
 });
+
 
 // Subscription API
 app.post("/data/:category", async (req, res) => {
