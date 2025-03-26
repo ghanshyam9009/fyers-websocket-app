@@ -1,5 +1,3 @@
-
-
 const express = require("express");
 const http = require("http");
 const FyersSocket = require("fyers-api-v3").fyersDataSocket;
@@ -11,6 +9,7 @@ const server = http.createServer(app);
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
+console.log("🚀 Initializing Fyers WebSocket connection...");
 const fyersdata = new FyersSocket("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJhcGkuZnllcnMuaW4iLCJpYXQiOjE3NDI5NjM5MzQsImV4cCI6MTc0MzAzNTQ1NCwibmJmIjoxNzQyOTYzOTM0LCJhdWQiOlsieDowIiwiZDoxIiwiZDoyIl0sInN1YiI6ImFjY2Vzc190b2tlbiIsImF0X2hhc2giOiJnQUFBQUFCbjQ0VGV3WFRoTC1vRk4xMWVtdE5lU2FVSDI2UnlPV2JDNWZUNXQ3cU9DbjhlbUotR3kxWHJlUVA4TUhxNU1wQnZLQTVFNFA4ZEQwaFI5aTVoeVdZTHdoYUxEaUZzMnV4MFNlRkpFcVRtX3NoLVFCST0iLCJkaXNwbGF5X25hbWUiOiJTQVJUSEFLIFNFTkdBUiIsIm9tcyI6IksxIiwiaHNtX2tleSI6ImUxYjcyZjI4Zjg4MDAxOTMxNGE2YWE4MjdmNDhjMGY0M2ZkY2NkNGFlZjdkZDU4NzRhZTkwMjdkIiwiaXNEZHBpRW5hYmxlZCI6bnVsbCwiaXNNdGZFbmFibGVkIjpudWxsLCJmeV9pZCI6IlhTMDc4MDMiLCJhcHBUeXBlIjoxMDAsInBvYV9mbGFnIjoiTiJ9.mX71aWCj15R0WaWbObn3uIdPwDiUdrqYbkROFu7v6e8", "");
 fyersdata.autoreconnect(6);
 fyersdata.connect();
@@ -21,6 +20,7 @@ let symbolSubscribers = {};
 let lastKnownData = {}; 
 
 function updateSubscription(symbols, userId) {
+    console.log(`🔄 Updating subscription for user ${userId}:`, symbols);
     symbols.forEach(symbol => {
         if (!symbolSubscribers[symbol]) {
             symbolSubscribers[symbol] = new Set();
@@ -28,6 +28,7 @@ function updateSubscription(symbols, userId) {
         symbolSubscribers[symbol].add(userId);
 
         if (!subscribedSymbols.has(symbol)) {
+            console.log(`📡 Subscribing to symbol: ${symbol}`);
             fyersdata.subscribe([symbol]);
             subscribedSymbols.add(symbol);
         }
@@ -36,12 +37,14 @@ function updateSubscription(symbols, userId) {
 }
 
 async function updateUnsubscription() {
+    console.log("🔄 Checking for unused subscriptions...");
     for (const symbol of [...subscribedSymbols]) {
         const stillNeeded = Object.values(userSessions).some(session =>
             Object.values(session.categories || {}).some(symbols => symbols.includes(symbol))
         );
-
+        
         if (!stillNeeded) {
+            console.log(`❌ Unsubscribing from symbol: ${symbol}`);
             await fyersdata.unsubscribe([symbol]); 
             subscribedSymbols.delete(symbol);
             delete symbolSubscribers[symbol];
@@ -63,13 +66,16 @@ fyersdata.on("connect", () => {
 });
 
 fyersdata.on("message", (message) => {
+    console.log("📩 Incoming WebSocket Message:", message);
     if (!message?.symbol || message.ltp === undefined) return;
+    
     const filteredData = { symbol: message.symbol, ltp: message.ltp, ch: message.ch, chp: message.chp };
     lastKnownData[message.symbol] = filteredData;
 
     Object.entries(userSessions).forEach(([userId, session]) => {
         Object.entries(session.categories || {}).forEach(([category, symbols]) => {
             if (symbols.includes(message.symbol)) {
+                console.log(`📤 Sending update to user ${userId} for category ${category}`);
                 session.clients.forEach(client => {
                     client.res.write(`data: ${JSON.stringify({ category, ...filteredData })}\n\n`);
                 });
@@ -79,6 +85,7 @@ fyersdata.on("message", (message) => {
 });
 
 app.post("/data/:category", (req, res) => {
+    console.log("🔹 Received data subscription request:", req.body);
     const { userId, symbols } = req.body;
     const category = req.params.category;
     if (!userId || !Array.isArray(symbols)) return res.status(400).json({ error: "Invalid request" });
@@ -91,6 +98,7 @@ app.post("/data/:category", (req, res) => {
 });
 
 app.get("/subscribe", (req, res) => {
+    console.log("🔹 Received new subscription request:", req.query);
     const { userId } = req.query;
     if (!userId || !userSessions[userId]) return res.status(400).json({ error: "Invalid userId" });
     
@@ -111,6 +119,7 @@ app.get("/subscribe", (req, res) => {
     });
     
     req.on("close", () => {
+        console.log(`❌ User ${userId} disconnected from real-time updates.`);
         userSessions[userId].clients = userSessions[userId].clients.filter(client => client.res !== res);
         if (userSessions[userId].clients.length === 0 && Object.keys(userSessions[userId].categories).length === 0) {
             delete userSessions[userId];
@@ -121,6 +130,7 @@ app.get("/subscribe", (req, res) => {
 });
 
 app.post("/unsubscribe-category", async (req, res) => {
+    console.log("🔹 Received unsubscription request:", req.body);
     try {
         const { userId, category } = req.body;
         if (!userId || !category || !userSessions[userId]) {
@@ -149,7 +159,6 @@ app.post("/unsubscribe-category", async (req, res) => {
 
 const PORT = process.env.PORT || 7000;
 server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
-
 
 
 
