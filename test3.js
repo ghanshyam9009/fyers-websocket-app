@@ -19,22 +19,19 @@ let subscribedSymbols = new Set();
 let symbolSubscribers = {}; 
 let lastKnownData = {}; 
 
-function updateSubscription(symbols, userId) {
-    console.log(`🔄 Updating subscription for user ${userId}:`, symbols);
-    symbols.forEach(symbol => {
-        if (!symbolSubscribers[symbol]) {
-            symbolSubscribers[symbol] = new Set();
-        }
-        symbolSubscribers[symbol].add(userId);
-
-        if (!subscribedSymbols.has(symbol)) {
-            console.log(`📡 Subscribing to symbol: ${symbol}`);
-            fyersdata.subscribe([symbol]);
-            subscribedSymbols.add(symbol);
+async function updateUnsubscription(symbolsToUnsubscribe) {
+    symbolsToUnsubscribe.forEach(async (symbol) => {
+        if (subscribedSymbols.has(symbol)) {
+            await fyersdata.unsubscribe([symbol]); 
+            subscribedSymbols.delete(symbol);
+            delete symbolSubscribers[symbol];
+            delete lastKnownData[symbol];
+            console.log(`🚨 Unsubscribed from ${symbol} and removed it from Fyers stream`);
         }
     });
     logSubscriptions();
 }
+
 
 async function updateUnsubscription() {
     console.log("🔄 Checking for unused subscriptions...");
@@ -130,7 +127,6 @@ app.get("/subscribe", (req, res) => {
 });
 
 app.post("/unsubscribe-category", async (req, res) => {
-    console.log("🔹 Received unsubscription request:", req.body);
     try {
         const { userId, category } = req.body;
         if (!userId || !category || !userSessions[userId]) {
@@ -139,23 +135,16 @@ app.post("/unsubscribe-category", async (req, res) => {
         
         const removedSymbols = userSessions[userId].categories[category] || [];
         delete userSessions[userId].categories[category];
-        
-        removedSymbols.forEach(symbol => {
-            if (symbolSubscribers[symbol]) {
-                symbolSubscribers[symbol].delete(userId);
-                if (symbolSubscribers[symbol].size === 0) {
-                    delete symbolSubscribers[symbol];
-                }
-            }
-        });
-        
-        await updateUnsubscription();
-        res.json({ message: `User unsubscribed from ${category}` });
+
+        await updateUnsubscription(removedSymbols);  // Unsubscribe symbols from Fyers immediately
+
+        res.json({ message: `User unsubscribed from ${category} and symbols removed` });
     } catch (error) {
         console.error("🚨 Error in /unsubscribe-category:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });
+
 
 const PORT = process.env.PORT || 7000;
 server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
