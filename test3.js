@@ -326,7 +326,6 @@
 
 
 
-
 const express = require("express");
 const http = require("http");
 const FyersSocket = require("fyers-api-v3").fyersDataSocket;
@@ -348,20 +347,21 @@ let symbolSubscribers = {};
 let indicesSubscription = new Set();
 let lastKnownData = {}; 
 let symbolTimers = {}; 
+let resubscriptionCounts = {}; 
+const MAX_RESUBSCRIPTIONS = 2;
 
 function updateSubscription(symbols, userId, category) {
-    if (category === "watchlist") return; // Skip watchlist category
-
     symbols.forEach(symbol => {
         if (!symbolSubscribers[symbol]) {
             symbolSubscribers[symbol] = new Set();
         }
         symbolSubscribers[symbol].add(userId);
-
+        
         if (!subscribedSymbols.has(symbol)) {
             fyersdata.subscribe([symbol]);
             subscribedSymbols.add(symbol);
             console.log(`✅ User ${userId} subscribed to ${category} - Symbol: ${symbol}`);
+            resubscriptionCounts[symbol] = 0;
             startSymbolTimer(symbol);
         }
     });
@@ -371,15 +371,13 @@ function updateSubscription(symbols, userId, category) {
 function updateUnsubscription() {
     for (const symbol of subscribedSymbols) {
         const stillNeeded = Object.values(userSessions).some(session =>
-            Object.entries(session.categories).some(([category, symbols]) => 
-                category !== "watchlist" && symbols.includes(symbol)
-            )
+            Object.values(session.categories).some(symbols => symbols.includes(symbol))
         );
-
         if (!stillNeeded) {
             fyersdata.unsubscribe([symbol]);
             subscribedSymbols.delete(symbol);
             delete symbolSubscribers[symbol];
+            delete resubscriptionCounts[symbol];
             console.log(`❌ Symbol ${symbol} unsubscribed due to no active users.`);
         }
     }
@@ -388,23 +386,19 @@ function updateUnsubscription() {
 
 function logSubscriptions() {
     console.log("=== Active Subscriptions ===");
-    Object.entries(userSessions).forEach(([userId, session]) => {
-        Object.entries(session.categories || {}).forEach(([category, symbols]) => {
-            symbols.forEach(symbol => {
-                if (symbolSubscribers[symbol]) {
-                    console.log(`📊 User: ${userId}, Category: ${category}, Symbol: ${symbol}`);
-                }
-            });
-        });
+    Object.entries(symbolSubscribers).forEach(([symbol, users]) => {
+        console.log(`📊 Symbol: ${symbol}, Users: ${Array.from(users).join(", ")}`);
     });
 }
-
 
 function startSymbolTimer(symbol) {
     if (symbolTimers[symbol]) clearTimeout(symbolTimers[symbol]);
     symbolTimers[symbol] = setTimeout(() => {
-        console.log(`⚠️ No data received for symbol ${symbol}, re-subscribing...`);
-        fyersdata.subscribe([symbol]);
+        if (resubscriptionCounts[symbol] < MAX_RESUBSCRIPTIONS && subscribedSymbols.has(symbol)) {
+            console.log(`🔄 Re-subscribing to ${symbol} due to inactivity...`);
+            fyersdata.subscribe([symbol]);
+            resubscriptionCounts[symbol]++;
+        }
     }, 10000); 
 }
 
@@ -417,17 +411,14 @@ fyersdata.on("connect", () => {
 
 fyersdata.on("message", (message) => {
     if (!message?.symbol || message.ltp === undefined) return;
-    
     const filteredData = { symbol: message.symbol, ltp: message.ltp, ch: message.ch, chp: message.chp };
     lastKnownData[message.symbol] = filteredData;
-    // console.log(`📊 Received Data:`, filteredData);
+    console.log(`📊 Received Data:`, filteredData);
     clearTimeout(symbolTimers[message.symbol]); 
     startSymbolTimer(message.symbol);
     
     Object.entries(userSessions).forEach(([userId, session]) => {
         Object.entries(session.categories || {}).forEach(([category, symbols]) => {
-            if (category === "watchlist") return; // Skip watchlist category updates
-            
             if (symbols.includes(message.symbol)) {
                 session.clients.forEach(client => {
                     client.res.write(`data: ${JSON.stringify({ category, ...filteredData })}\n\n`);
