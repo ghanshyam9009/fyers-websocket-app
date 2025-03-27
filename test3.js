@@ -183,6 +183,7 @@ let subscribedSymbols = new Set();
 let symbolSubscribers = {};
 let indicesSubscription = new Set();
 let lastKnownData = {}; // Store last known data
+let pendingSubscriptions = new Map(); // Track pending re-subscriptions
 
 function updateSubscription(symbols, userId) {
     symbols.forEach(symbol => {
@@ -194,26 +195,25 @@ function updateSubscription(symbols, userId) {
         if (!subscribedSymbols.has(symbol)) {
             fyersdata.subscribe([symbol]);
             subscribedSymbols.add(symbol);
+        } else if (pendingSubscriptions.has(symbol)) {
+            // If symbol was previously unsubscribed but still needed, re-subscribe it
+            fyersdata.subscribe([symbol]);
+            pendingSubscriptions.delete(symbol);
         }
     });
     logSubscriptions();
 }
 
-async function updateUnsubscription() {
-    console.log("\n🔍 Checking for unused symbols to unsubscribe...");
-    
-    for (const symbol of [...subscribedSymbols]) {
+function updateUnsubscription() {
+    for (const symbol of subscribedSymbols) {
         const stillNeeded = Object.values(userSessions).some(session =>
-            Object.values(session.categories || {}).some(symbols => symbols.includes(symbol))
+            Object.values(session.categories).some(symbols => symbols.includes(symbol))
         );
-
         if (!stillNeeded) {
-            console.log(`❌ Unsubscribing from: ${symbol}`);
-            await fyersdata.unsubscribe([symbol]); // Ensure unsubscription completes
+            fyersdata.unsubscribe([symbol]);
             subscribedSymbols.delete(symbol);
+            pendingSubscriptions.set(symbol, true); // Mark for potential re-subscription
             delete symbolSubscribers[symbol];
-        } else {
-            console.log(`✅ Keeping subscription for: ${symbol}`);
         }
     }
     logSubscriptions();
@@ -238,8 +238,9 @@ fyersdata.on("message", (message) => {
     const filteredData = { symbol: message.symbol, ltp: message.ltp, ch: message.ch, chp: message.chp };
     lastKnownData[message.symbol] = filteredData;
 
-    console.log(`📊 Received Data:`, { ...filteredData, ltp: message.ltp });
+        console.log(`📊 Received Data:`, { ...filteredData, ltp: message.ltp });
 
+    
     Object.entries(userSessions).forEach(([userId, session]) => {
         Object.entries(session.categories || {}).forEach(([category, symbols]) => {
             if (symbols.includes(message.symbol)) {
@@ -290,64 +291,37 @@ app.get("/subscribe", (req, res) => {
     });
     
     req.on("close", () => {
-        if (!userSessions[userId]) return; // Prevents undefined access
-
-        // Remove the client from the list
         userSessions[userId].clients = userSessions[userId].clients.filter(client => client.res !== res);
-
-        // If the user has no active subscriptions, clean up the session
-        if (userSessions[userId].clients.length === 0 && Object.keys(userSessions[userId].categories).length === 0) {
-            delete userSessions[userId];
-        }
-
         updateUnsubscription();
     });
-
     console.log(`✅ User ${userId} subscribed for real-time updates.`);
 });
 
-app.post("/unsubscribe-category", async (req, res) => {
-    try {
-        const { userId, category } = req.body;
-        
-        console.log(`\n🔴 Unsubscribing User ${userId} from ${category}`);
+app.post("/unsubscribe-category", (req, res) => {
+    const { userId, category } = req.body;
+    if (!userId || !category || !userSessions[userId]) return res.status(400).json({ error: "Invalid request" });
 
-        if (!userId || !category || !userSessions[userId]) {
-            console.log("❌ Invalid request data.");
-            return res.status(400).json({ error: "Invalid request" });
-        }
-
-        if (!userSessions[userId].categories[category]) {
-            console.log(`⚠️ User ${userId} is not subscribed to ${category}`);
-            return res.json({ message: `User is not subscribed to ${category}` });
-        }
-
-        const removedSymbols = userSessions[userId].categories[category] || [];
-        console.log(`📉 Removing symbols from user session: ${removedSymbols}`);
-
-        delete userSessions[userId].categories[category];
-
-        // Update global tracking for symbols
-        for (const symbol of removedSymbols) {
-            if (symbolSubscribers[symbol]) {
-                symbolSubscribers[symbol].delete(userId);
-                if (symbolSubscribers[symbol].size === 0) {
-                    delete symbolSubscribers[symbol];
-                }
-            }
-        }
-
-        await updateUnsubscription();
-        res.json({ message: `User ${userId} unsubscribed from ${category}` });
-
-    } catch (error) {
-        console.error("❌ Error in unsubscribe-category:", error);
-        res.status(500).json({ error: "Internal Server Error" });
+    if (!userSessions[userId].categories[category]) {
+        return res.json({ message: `User is not subscribed to ${category}` });
     }
+    
+    delete userSessions[userId].categories[category];
+    
+    for (const symbol of Object.keys(symbolSubscribers)) {
+        const stillNeeded = Object.values(userSessions).some(session =>
+            Object.values(session.categories).some(symbols => symbols.includes(symbol))
+        );
+        if (!stillNeeded) {
+            symbolSubscribers[symbol].delete(userId);
+            if (symbolSubscribers[symbol].size === 0) delete symbolSubscribers[symbol];
+        }
+    }
+    
+    updateUnsubscription();
+    res.json({ message: `User unsubscribed from ${category}` });
 });
 
-server.listen(3000, () => {
-    console.log("🚀 Server running on port 3000");
-});
+const PORT = process.env.PORT || 7000;
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
 
 
