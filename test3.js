@@ -383,10 +383,17 @@ function updateUnsubscription() {
 
 function logSubscriptions() {
     console.log("=== Active Subscriptions ===");
-    Object.entries(symbolSubscribers).forEach(([symbol, users]) => {
-        console.log(`📊 Symbol: ${symbol}, Users: ${Array.from(users).join(", ")}`);
+    Object.entries(userSessions).forEach(([userId, session]) => {
+        Object.entries(session.categories || {}).forEach(([category, symbols]) => {
+            symbols.forEach(symbol => {
+                if (symbolSubscribers[symbol]) {
+                    console.log(`📊 User: ${userId}, Category: ${category}, Symbol: ${symbol}`);
+                }
+            });
+        });
     });
 }
+
 
 function startSymbolTimer(symbol) {
     if (symbolTimers[symbol]) clearTimeout(symbolTimers[symbol]);
