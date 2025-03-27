@@ -412,7 +412,7 @@ fyersdata.on("message", (message) => {
     lastKnownData[message.symbol] = filteredData;
     symbolLastUpdated[message.symbol] = Date.now();
 
-    console.log(`📊 Received Data:`, filteredData);
+    // console.log(`📊 Received Data:`, filteredData);
     
     Object.entries(userSessions).forEach(([userId, session]) => {
         Object.entries(session.categories || {}).forEach(([category, symbols]) => {
