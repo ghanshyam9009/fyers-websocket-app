@@ -420,7 +420,7 @@ fyersdata.on("message", (message) => {
     
     const filteredData = { symbol: message.symbol, ltp: message.ltp, ch: message.ch, chp: message.chp };
     lastKnownData[message.symbol] = filteredData;
-    console.log(`📊 Received Data:`, filteredData);
+    // console.log(`📊 Received Data:`, filteredData);
     clearTimeout(symbolTimers[message.symbol]); 
     startSymbolTimer(message.symbol);
     
