@@ -350,12 +350,14 @@ let lastKnownData = {};
 let symbolTimers = {}; 
 
 function updateSubscription(symbols, userId, category) {
+    if (category === "watchlist") return; // Skip watchlist category
+
     symbols.forEach(symbol => {
         if (!symbolSubscribers[symbol]) {
             symbolSubscribers[symbol] = new Set();
         }
         symbolSubscribers[symbol].add(userId);
-        
+
         if (!subscribedSymbols.has(symbol)) {
             fyersdata.subscribe([symbol]);
             subscribedSymbols.add(symbol);
@@ -369,8 +371,11 @@ function updateSubscription(symbols, userId, category) {
 function updateUnsubscription() {
     for (const symbol of subscribedSymbols) {
         const stillNeeded = Object.values(userSessions).some(session =>
-            Object.values(session.categories).some(symbols => symbols.includes(symbol))
+            Object.entries(session.categories).some(([category, symbols]) => 
+                category !== "watchlist" && symbols.includes(symbol)
+            )
         );
+
         if (!stillNeeded) {
             fyersdata.unsubscribe([symbol]);
             subscribedSymbols.delete(symbol);
@@ -412,14 +417,17 @@ fyersdata.on("connect", () => {
 
 fyersdata.on("message", (message) => {
     if (!message?.symbol || message.ltp === undefined) return;
+    
     const filteredData = { symbol: message.symbol, ltp: message.ltp, ch: message.ch, chp: message.chp };
     lastKnownData[message.symbol] = filteredData;
-    // console.log(`📊 Received Data:`, filteredData);
+    console.log(`📊 Received Data:`, filteredData);
     clearTimeout(symbolTimers[message.symbol]); 
     startSymbolTimer(message.symbol);
     
     Object.entries(userSessions).forEach(([userId, session]) => {
         Object.entries(session.categories || {}).forEach(([category, symbols]) => {
+            if (category === "watchlist") return; // Skip watchlist category updates
+            
             if (symbols.includes(message.symbol)) {
                 session.clients.forEach(client => {
                     client.res.write(`data: ${JSON.stringify({ category, ...filteredData })}\n\n`);
