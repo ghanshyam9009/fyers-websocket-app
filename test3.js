@@ -495,10 +495,10 @@ app.post("/add", (req, res) => {
     console.log(`🔹 Add API called for user: ${userId}, symbol: ${symbol}`);
     
     userSessions[userId] = userSessions[userId] || { clients: [], categories: {} };
-    userSessions[userId].categories["custom"] = userSessions[userId].categories["custom"] || [];
+    userSessions[userId].categories["watchlist"] = userSessions[userId].categories["custom"] || [];
     
-    if (!userSessions[userId].categories["custom"].includes(symbol)) {
-        userSessions[userId].categories["custom"].push(symbol);
+    if (!userSessions[userId].categories["watchlist"].includes(symbol)) {
+        userSessions[userId].categories["watchlist"].push(symbol);
         updateSubscription([symbol], userId, "custom");
     }
     
@@ -512,11 +512,11 @@ app.post("/remove", (req, res) => {
     
     console.log(`🔸 Remove API called for user: ${userId}, symbol: ${symbol}`);
     
-    if (userSessions[userId]?.categories["custom"]) {
-        userSessions[userId].categories["custom"] = userSessions[userId].categories["custom"].filter(sym => sym !== symbol);
+    if (userSessions[userId]?.categories["watchlist"]) {
+        userSessions[userId].categories["watchlist"] = userSessions[userId].categories["custom"].filter(sym => sym !== symbol);
         
-        if (userSessions[userId].categories["custom"].length === 0) {
-            delete userSessions[userId].categories["custom"];
+        if (userSessions[userId].categories["watchlist"].length === 0) {
+            delete userSessions[userId].categories["watchlist"];
         }
         
         updateUnsubscription();
