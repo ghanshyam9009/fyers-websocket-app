@@ -488,5 +488,46 @@ app.post("/unsubscribe-category", (req, res) => {
     res.json({ message: `User unsubscribed from ${category}` });
 });
 
+app.post("/add", (req, res) => {
+    const { userId, symbol } = req.body;
+    if (!userId || !symbol) return res.status(400).json({ error: "Invalid request" });
+    
+    console.log(`🔹 Add API called for user: ${userId}, symbol: ${symbol}`);
+    
+    userSessions[userId] = userSessions[userId] || { clients: [], categories: {} };
+    userSessions[userId].categories["custom"] = userSessions[userId].categories["custom"] || [];
+    
+    if (!userSessions[userId].categories["custom"].includes(symbol)) {
+        userSessions[userId].categories["custom"].push(symbol);
+        updateSubscription([symbol], userId, "custom");
+    }
+    
+    console.log(`✅ User ${userId} successfully added symbol ${symbol}`);
+    res.json({ message: `Symbol ${symbol} added for user ${userId}` });
+});
+
+app.post("/remove", (req, res) => {
+    const { userId, symbol } = req.body;
+    if (!userId || !symbol) return res.status(400).json({ error: "Invalid request" });
+    
+    console.log(`🔸 Remove API called for user: ${userId}, symbol: ${symbol}`);
+    
+    if (userSessions[userId]?.categories["custom"]) {
+        userSessions[userId].categories["custom"] = userSessions[userId].categories["custom"].filter(sym => sym !== symbol);
+        
+        if (userSessions[userId].categories["custom"].length === 0) {
+            delete userSessions[userId].categories["custom"];
+        }
+        
+        updateUnsubscription();
+        console.log(`✅ User ${userId} successfully removed symbol ${symbol}`);
+        return res.json({ message: `Symbol ${symbol} removed for user ${userId}` });
+    }
+    
+    console.log(`⚠️ Symbol ${symbol} not found for user ${userId}`);
+    res.json({ message: `Symbol ${symbol} not found for user ${userId}` });
+});
+
+
 const PORT = process.env.PORT || 7000;
 server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
