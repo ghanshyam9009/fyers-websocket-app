@@ -155,8 +155,9 @@ app.get("/subscribe", (req, res) => {
 
 app.post("/unsubscribe-category", (req, res) => {
     const { userId, category } = req.body;
-    if (!userId || !category || !userSessions[userId]) return res.status(400).json({ error: "Invalid request" });
-
+    // if (!userId || !category || !userSessions[userId]) return res.status(400).json({ error: "Invalid request" });
+    if (!userId || !category) return res.status(400).json({ error: "Invalid request" });
+   
     if (!userSessions[userId].categories[category]) {
         return res.json({ message: `User is not subscribed to ${category}` });
     }
