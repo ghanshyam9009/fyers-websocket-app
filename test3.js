@@ -127,7 +127,8 @@ app.post("/data/:category", (req, res) => {
 
 app.get("/subscribe", (req, res) => {
     const { userId } = req.query;
-    if (!userId || !userSessions[userId]) return res.status(400).json({ error: "Invalid userId" });
+    // if (!userId || !userSessions[userId]) return res.status(400).json({ error: "Invalid userId" });
+     if (!userId) return res.status(400).json({ error: "Invalid userId" });
     
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
