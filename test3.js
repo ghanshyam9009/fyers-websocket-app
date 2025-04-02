@@ -190,23 +190,22 @@ app.post("/add", (req, res) => {
 app.post("/remove", (req, res) => {
     const { userId, symbol } = req.body;
     if (!userId || !symbol) return res.status(400).json({ error: "Invalid request" });
-    
+
     console.log(`🔸 Remove API called for user: ${userId}, symbol: ${symbol}`);
-    
-    if (userSessions[userId]?.categories["watchlist"]) {
-        userSessions[userId].categories["watchlist"] = userSessions[userId].categories["custom"].filter(sym => sym !== symbol);
-        
-        if (userSessions[userId].categories["watchlist"].length === 0) {
-            delete userSessions[userId].categories["watchlist"];
-        }
-        
-        updateUnsubscription();
-        console.log(`✅ User ${userId} successfully removed symbol ${symbol}`);
-        return res.json({ message: `Symbol ${symbol} removed for user ${userId}` });
+
+    if (!userSessions[userId] || !userSessions[userId].categories["custom"]) {
+        return res.status(400).json({ error: "User or category not found" });
     }
-    
-    console.log(`⚠️ Symbol ${symbol} not found for user ${userId}`);
-    res.json({ message: `Symbol ${symbol} not found for user ${userId}` });
+
+    userSessions[userId].categories["watchlist"] = userSessions[userId].categories["custom"].filter(sym => sym !== symbol);
+
+    if (userSessions[userId].categories["watchlist"].length === 0) {
+        delete userSessions[userId].categories["watchlist"];
+    }
+
+    updateUnsubscription();
+    console.log(`✅ User ${userId} successfully removed symbol ${symbol}`);
+    res.json({ message: `Symbol ${symbol} removed for user ${userId}` });
 });
 
 
