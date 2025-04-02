@@ -193,11 +193,11 @@ app.post("/remove", (req, res) => {
 
     console.log(`🔸 Remove API called for user: ${userId}, symbol: ${symbol}`);
 
-    if (!userSessions[userId] || !userSessions[userId].categories["custom"]) {
+    if (!userSessions[userId] || !userSessions[userId].categories["watchlist"]) {
         return res.status(400).json({ error: "User or category not found" });
     }
 
-    userSessions[userId].categories["watchlist"] = userSessions[userId].categories["custom"].filter(sym => sym !== symbol);
+    userSessions[userId].categories["watchlist"] = userSessions[userId].categories["watchlist"].filter(sym => sym !== symbol);
 
     if (userSessions[userId].categories["watchlist"].length === 0) {
         delete userSessions[userId].categories["watchlist"];
