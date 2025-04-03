@@ -110,7 +110,8 @@ fyersdata.on("message", (message) => {
 app.post("/data/:category", (req, res) => {
     const { userId, symbols } = req.body;
     const category = req.params.category;
-    if (!userId || !Array.isArray(symbols)) return res.status(400).json({ error: "Invalid request" });
+    // if (!userId || !Array.isArray(symbols)) return res.status(400).json({ error: "Invalid request" });
+    if (!userId) return res.status(400).json({ error: "Invalid request" });
     
     userSessions[userId] = userSessions[userId] || { clients: [], categories: {} };
     userSessions[userId].categories[category] = symbols;
